@@ -1,26 +1,24 @@
 """This is a cog for a discord.py bot.
 It collects informmation about helium miners...
-    ├ stats                 Helium stats
-    ├ tokensupply           Returns the circulating token supply
-    ├ blockheight           Helium blockheight | ISO8601 timestamp or relative time can be used.
-    ├ blockstats            Block Stats
-    ├ blocks                Retrieves block descriptions
-    ├ blockforheight        Block at Height
-    ├ blocktrasheight       Get transactions for a block at a given height
-    ├ blockathash           Get block descriptor for the given block hash
-    ├ blocktranshash        [WIP] Get transactions for a block at a given block hash
-    ├ listaccounts          [WIP] Retrieve the current set of known accounts
-    ├ accountaddress        Retrieve a specific account record
-    ├ hotspotsaccount       Fetches hotspots owned by a given account address
-    ├ validatorsaccount     Fetches validators owned by a given account address
-    ├ ouisaccount           Fetches OUIs owned by a given account address
-    └ minername             Helium hotspot data for name
+    ├ stats|st                  Helium stats
+    ├ tokensupply|ts            Returns the circulating token supply
+    ├ blockheight|bh            Helium blockheight | ISO8601 timestamp or relative time can be used.
+    ├ blockstats|bs             Block Stats
+    ├ blocks                    Retrieves block descriptions
+    ├ blockforheight|bfh        Block at Height
+    ├ blocktrasheight|bth       Get transactions for a block at a given height
+    ├ blockathash|bah           Get block descriptor for the given block hash
+    ├ blocktranshash|btah       [WIP] Get transactions for a block at a given block hash
+    ├ listaccounts|la           [WIP] Retrieve the current set of known accounts
+    ├ accountaddress|aa         Retrieve a specific account record
+    ├ hotspotsaccount|hfa       Fetches hotspots owned by a given account address
+    ├ validatorsaccount|vfa     Fetches validators owned by a given account address
+    ├ ouisaccount|oui           Fetches OUIs owned by a given account address
+    └ minername|miner           Helium hotspot data for name
 """
 
-# from datetime import datetime as dt
-# import pandas as pd
-# import matplotlib.pyplot as plt
 import json
+import random
 from discord.ext import commands
 from discord import Embed
 
@@ -33,10 +31,10 @@ class Helium(commands.Cog, name='Helium'):
         self.client = client
         self.api_base = api_base
         self.bones = bones
+        self.hnt_image = 'https://cdn.discordapp.com/attachments/788621973709127693/999838638827380806/hnt.png'
         self.headers = {
             'Content-Type': 'application/json; charset=utf-8',
-            'User-Agent': 'Discord python helium bot'
-            # 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Mobile Safari/537.36'
+            'User-Agent': 'Discord python helium bot bar moo oink'
         }
 
     def locations(city: str):
@@ -58,7 +56,7 @@ class Helium(commands.Cog, name='Helium'):
     @commands.group(
         pass_context=True,
         name='helium',
-        aliases=['hm'],
+        aliases=['hm', 'h'],
         hidden=True,
         invoke_without_command=True,
     )
@@ -79,8 +77,9 @@ class Helium(commands.Cog, name='Helium'):
         async with self.client.session.get(
             'https://api.helium.io/v1/stats', headers=self.headers
         ) as response:
-            data = await response.json()
-            return await ctx.send(data)
+            data = (await response.json())['data']
+            x = json.dumps(data, indent=4)
+            return await ctx.send(f'```json\n{x}\n```')
 
     ##########
     # helium token supply
@@ -281,8 +280,74 @@ class Helium(commands.Cog, name='Helium'):
         async with self.client.session.get(
             f'https://api.helium.io/v1/accounts/{address}/hotspots', headers=self.headers
         ) as response:
-            data = await response.json()
-            return await ctx.send(data)
+            data = (await response.json())['data']
+            hotspots = [f"[View in explorer]({gw['name']})" for gw in data]
+            # all_hotspots = "\n".join(hotspots)
+            # return await ctx.send(f'```{len(fields)} | {all_hotspots}```')
+            paginator = commands.Paginator(
+                prefix='```',
+                suffix='```',
+                linesep='\n',
+                max_size=2000
+            )
+            message = None
+
+            all_fields = [' '.join(word.title() for word in gw['name'].split('-')) for gw in data]
+
+            if len(all_fields) <= 25:
+                embed = Embed(
+                    #title=f'{len(hotspots)} Hotspots Found',
+                    color=random.randint(0, 0xFFFFFF),
+                    description=f'```Hotspots found for this address.\n{address}```',
+                )
+                #embed.set_image(
+                #    url=self.hnt_image
+                #)
+                embed.set_author(
+                    name=f'{len(hotspots)} Helium Hotspots Found',
+                    icon_url=self.hnt_image
+                )
+                [embed.add_field(
+                    name=' '.join(word.title() for word in gw['name'].split('-')),
+                    value=f'[View in explorer](https://explorer.helium.com/hotspots/{gw["address"]}/activity)',
+                    inline=False
+                ) for gw in data]
+                #embed.set_thumbnail(
+                #    url=self.hnt_image
+                #)
+                embed.set_footer(
+                    text='Provided By: https://api.helium.io'
+                )
+                return await ctx.send(embed=embed)
+            else:
+                for num, line in enumerate(all_fields):
+                    paginator.add_line(f'{num+1:3} | {line}')
+
+                for page in paginator.pages:
+                    await ctx.send(page)
+
+                paginator.clear()
+                return message
+
+            """
+            embed = Embed(
+                title='Hotspots Found',
+                color=random.randint(0, 0xFFFFFF),
+                description=f'```{len(hotspots)} Hotspots found for this address.\n{address}```',
+            )
+            embed.set_thumbnail(
+                url=self.hnt_image
+            )
+            [embed.add_field(
+                name=' '.join(word.title() for word in gw['name'].split('-')),
+                value=f'[View in explorer](https://explorer.helium.com/accounts/{gw["address"]}/activity)',
+                inline=False
+            ) for gw in data]
+            embed.set_footer(
+                text='Provided By: https://api.helium.io'
+            )
+            return await ctx.send(embed=embed)
+            """
 
     ##########
     # helium validators for account
@@ -302,7 +367,7 @@ class Helium(commands.Cog, name='Helium'):
 
     ##########
     # helium ouis for account
-    @helium.command(name='ouisaccount', aliases=['ofa'])
+    @helium.command(name='ouisaccount', aliases=['oui'])
     async def helium_ouis_for_account(self, ctx, address: str):
         """
         OUIs for Account
@@ -334,12 +399,75 @@ class Helium(commands.Cog, name='Helium'):
             f'https://api.helium.io/v1/hotspots/name/{gw_name}', headers=self.headers
         ) as response:
             resp = (await response.json())['data'][0]
-            print(json.dumps(resp, indent=2))
+            # print(json.dumps(resp, indent=2))
 
             embed = Embed(
                 title=f'{" ".join((word.title() for word in words[:3]))}',
                 url=f'https://explorer.helium.com/hotspots/{resp["address"]}',
-                description='miner description...'
+                #description='miner description...?'
+            )
+            # embed.set_image(
+            #     url=self.hnt_image
+            # )
+            embed.set_thumbnail(
+                url=self.hnt_image
+            )
+            # embed.set_author(
+            #     name='Helium Hotspot Details',
+            #     icon_url=self.hnt_image
+            # )
+            embed.add_field(
+                name=f'Location [lat, Lon]',
+                value=f'{round(resp["lat"], 4)}, {round(resp["lng"], 4)}',
+                inline=False
+            )
+            embed.add_field(
+                name='Date Added',
+                value=resp['timestamp_added'][:10],
+                inline=True
+            )
+            embed.add_field(
+                name='Status',
+                value=resp['status']['online'].title(),
+                inline=True
+            )
+            embed.add_field(
+                name='Hotspot Name',
+                value=resp['mode'].title(),
+                inline=True
+            )
+            embed.add_field(
+                name='Location Hex',
+                value=resp['location_hex'],
+                inline=True
+            )
+            embed.add_field(
+                name='Location',
+                value=resp['location'],
+                inline=True
+            )
+            embed.add_field(
+                name='Mode',
+                value=resp['mode'],
+                inline=True
+            )
+            # embed.add_field(
+            #     name='Reward Scale',
+            #     value=resp['reward_scale'],
+            #     inline=True
+            # )
+            embed.add_field(
+                name='Block Added',
+                value=resp['block_added'],
+                inline=True
+            )
+            embed.add_field(
+                name='Miner Address',
+                value=resp['address'],
+                inline=False
+            )
+            embed.set_footer(
+                text='Provided By: https://api.helium.io'
             )
 
             return await ctx.send(embed=embed)
@@ -347,7 +475,6 @@ class Helium(commands.Cog, name='Helium'):
     # ----------------------------------------------
     # Cog Tasks
     # ----------------------------------------------
-
 
 async def setup(client):
     """This is called when the cog is loaded via load_extension"""

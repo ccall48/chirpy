@@ -107,7 +107,7 @@ class Superuser(commands.Cog, name='Superuser'):
     # ----------------------------------------------
     @git.command(name='remote')
     async def git_remote(self, ctx):
-        """view all branchs"""
+        """view remote branchs"""
         await ctx.typing()
         try:
             output = subprocess.check_output(
@@ -169,3 +169,8 @@ class Superuser(commands.Cog, name='Superuser'):
 
 async def setup(client):
     await client.add_cog(Superuser(client))
+
+"""
+277025474560
+https://discord.com/api/oauth2/authorize?client_id=1003548204794642433&permissions=277025474560&scope=bot%20applications.commands
+"""
