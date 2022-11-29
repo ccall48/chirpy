@@ -4,6 +4,8 @@ It will add some superuser commands to a bot.
 Commands:
     git
       pull       pull latest changes from github
+      branch     view branchs
+      checkout   change branch
       reset      reset n commits
 
 Only users which are specified as a superuser in the config.json
@@ -39,10 +41,8 @@ class Superuser(commands.Cog, name='Superuser'):
         """Commands to run git commands on the local repo"""
         await ctx.send_help('git')
 
-    @git.command(
-        name='pull',
-    )
-    async def pull(self, ctx):
+    @git.command(name='pull')
+    async def git_pull(self, ctx):
         """Pull the latest changes from github"""
         await ctx.typing()
         try:
@@ -61,10 +61,8 @@ class Superuser(commands.Cog, name='Superuser'):
     # ----------------------------------------------
     # Command to reset the repo to a previous commit
     # ----------------------------------------------
-    @git.command(
-        name='reset',
-    )
-    async def reset(self, ctx, n: int):
+    @git.command(name='reset')
+    async def git_reset(self, ctx, n: int):
         """Reset repo to HEAD~[n]"""
         if not n > 0:
             raise commands.BadArgument('Please specify n>0')
@@ -77,17 +75,59 @@ class Superuser(commands.Cog, name='Superuser'):
             await ctx.send(str(e))
 
     # ----------------------------------------------
-    # Command to reset the repo to a previous commit
+    # Command to checout another branch
     # ----------------------------------------------
-    @git.command(
-        name='branch',
-    )
-    async def branch(self, ctx, branch: str):
-        """change working branch"""
+    @git.command(name='checkout')
+    async def git_checkout(self, ctx, branch: str):
+        """checkout another branch branch"""
         await ctx.typing()
         try:
             output = subprocess.check_output(
                 ['git', 'checkout', branch]).decode()
+            await ctx.send('```git\n' + output + '\n```')
+        except Exception as e:
+            await ctx.send(str(e))
+
+    # ----------------------------------------------
+    # Command to view branches in repo
+    # ----------------------------------------------
+    @git.command(name='branch')
+    async def git_branch(self, ctx):
+        """view all branchs"""
+        await ctx.typing()
+        try:
+            output = subprocess.check_output(
+                ['git', 'branch', '-vv']).decode()
+            await ctx.send('```git\n' + output + '\n```')
+        except Exception as e:
+            await ctx.send(str(e))
+
+    # ----------------------------------------------
+    # Command to view branches in repo
+    # ----------------------------------------------
+    @git.command(name='remote')
+    async def git_remote(self, ctx):
+        """view all branchs"""
+        await ctx.typing()
+        try:
+            output = subprocess.check_output(
+                ['git', 'remote', '-vv']).decode()
+            await ctx.send('```git\n' + output + '\n```')
+        except Exception as e:
+            await ctx.send(str(e))
+
+    # ----------------------------------------------
+    # Command to fetch pull requests
+    # ----------------------------------------------
+    @git.command(name='fetch')
+    async def git_fetch(self, ctx, origin, pr_num, branch: str):
+        """fetch another branch or pr"""
+        await ctx.typing()
+        # git fetch origin pull/ID/head:BRANCH_NAME
+        pr_checkout = f'pull/{pr_num}/head:{branch}'
+        try:
+            output = subprocess.check_output(
+                ['git', 'fetch', origin, pr_checkout]).decode()
             await ctx.send('```git\n' + output + '\n```')
         except Exception as e:
             await ctx.send(str(e))
@@ -104,13 +144,13 @@ class Superuser(commands.Cog, name='Superuser'):
         """Change a setting
 
         Be careful with this one, as it could overwrite the bot_key or similar settings"""
-        with open("../config.json") as conffile:
-            self.client.config = json.load(conffile)
+        with open("../config.json") as f:
+            self.client.config = json.load(f)
 
         self.client.config[setting_name] = literal_eval(setting_value)
 
-        with open("../config.json", 'w') as conffile:
-            json.dump(self.client.config, conffile, indent=1)
+        with open("../config.json", 'w') as f:
+            json.dump(self.client.config, f, indent=1)
 
         await ctx.send('`Success`')
 
