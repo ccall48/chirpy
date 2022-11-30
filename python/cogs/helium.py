@@ -236,8 +236,38 @@ class Helium(commands.Cog, name='Helium'):
         async with self.client.session.get(
             f'{self.api_base}/v1/blocks/stats', headers=self.headers
         ) as response:
-            data = await response.json()
-            return await ctx.send(data)
+            data = (await response.json())['data']
+
+            embed = Embed(color=random.randint(0, 0xFFFFFF))
+            embed.set_author(
+                name='Helium Blocks Stats',
+                icon_url=self.hnt_image
+            )
+            embed.add_field(
+                name='Last Month',
+                value=f'stddev: {data["last_month"]["stddev"]}\n'
+                      + f'Avg: {data["last_month"]["avg"]}',
+                inline=False
+            )
+            embed.add_field(
+                name='Last Week',
+                value=f'stddev: {data["last_week"]["stddev"]}\n'
+                      + f'Avg: {data["last_week"]["avg"]}',
+                inline=False
+            )
+            embed.add_field(
+                name='Last Day',
+                value=f'stddev: {data["last_day"]["stddev"]}\n'
+                      + f'Avg: {data["last_day"]["avg"]}',
+                inline=False
+            )
+            embed.add_field(
+                name='Last hour',
+                value=f'stddev: {data["last_hour"]["stddev"]}\n'
+                      + f'Avg: {data["last_hour"]["avg"]}',
+                inline=False
+            )
+            return await ctx.send(embed=embed)
 
     ##########
     # helium blocks
@@ -488,18 +518,10 @@ class Helium(commands.Cog, name='Helium'):
             embed = Embed(
                 title=f'{" ".join((word.title() for word in words[:3]))}',
                 url=f'https://explorer.helium.com/hotspots/{resp["address"]}',
-                #description='miner description...?'
             )
-            # embed.set_image(
-            #     url=self.hnt_image
-            # )
             embed.set_thumbnail(
                 url=self.hnt_image
             )
-            # embed.set_author(
-            #     name='Helium Hotspot Details',
-            #     icon_url=self.hnt_image
-            # )
             embed.add_field(
                 name='Location [lat, Lon]',
                 value=f'{round(resp["lat"], 4)}, {round(resp["lng"], 4)}',
@@ -535,11 +557,6 @@ class Helium(commands.Cog, name='Helium'):
                 value=resp['mode'],
                 inline=True
             )
-            # embed.add_field(
-            #     name='Reward Scale',
-            #     value=resp['reward_scale'],
-            #     inline=True
-            # )
             embed.add_field(
                 name='Block Added',
                 value=resp['block_added'],
