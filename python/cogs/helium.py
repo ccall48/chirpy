@@ -1,20 +1,20 @@
 """This is a cog for a discord.py bot.
 It collects informmation about helium miners...
-    ├ stats|st                  Helium stats
-    ├ tokensupply|ts            Returns the circulating token supply
-    ├ blockheight|bh            Helium blockheight | ISO8601 timestamp or relative time can be used.
-    ├ blockstats|bs             Block Stats
-    ├ blocks                    Retrieves block descriptions
-    ├ blockforheight|bfh        Block at Height
-    ├ blocktrasheight|bth       Get transactions for a block at a given height
-    ├ blockathash|bah           Get block descriptor for the given block hash
-    ├ blocktranshash|btah       [WIP] Get transactions for a block at a given block hash
-    ├ listaccounts|la           [WIP] Retrieve the current set of known accounts
-    ├ accountaddress|aa         Retrieve a specific account record
-    ├ hotspotsaccount|hfa       Fetches hotspots owned by a given account address
-    ├ validatorsaccount|vfa     Fetches validators owned by a given account address
-    ├ ouisaccount|oui           Fetches OUIs owned by a given account address
-    └ minername|miner           Helium hotspot data for name
+    ├ stats                 Helium stats
+    ├ tokensupply           Returns the circulating token supply
+    ├ blockheight           Helium blockheight | ISO8601 timestamp or relative time can be used.
+    ├ blockstats            Block Stats
+    ├ blocks                Retrieves block descriptions
+    ├ blockforheight        Block at Height
+    ├ blocktrasheight       Get transactions for a block at a given height
+    ├ blockathash           Get block descriptor for the given block hash
+    ├ blocktranshash        [WIP] Get transactions for a block at a given block hash
+    ├ listaccounts          [WIP] Retrieve the current set of known accounts
+    ├ accountaddress        Retrieve a specific account record
+    ├ hotspotsaccount       Fetches hotspots owned by a given account address
+    ├ validatorsaccount     Fetches validators owned by a given account address
+    ├ ouisaccount           Fetches OUIs owned by a given account address
+    └ minername             Helium hotspot data for name
 """
 
 import json
@@ -24,13 +24,10 @@ from discord import Embed
 
 
 class Helium(commands.Cog, name='Helium'):
-    API_BASE = ''
-    BONES = 100_000_000
-
-    def __init__(self, client, api_base: str = API_BASE, bones: int = BONES):
+    def __init__(self, client):
         self.client = client
-        self.api_base = api_base
-        self.bones = bones
+        self.api_base = 'https://api.helium.io'
+        self.bones = 100_000_000
         self.hnt_image = 'https://cdn.discordapp.com/attachments/788621973709127693/999838638827380806/hnt.png'
         self.headers = {
             'Content-Type': 'application/json; charset=utf-8',
@@ -75,11 +72,84 @@ class Helium(commands.Cog, name='Helium'):
         election times over a number of intervals.
         """
         async with self.client.session.get(
-            'https://api.helium.io/v1/stats', headers=self.headers
+            f'{self.api_base}/v1/stats', headers=self.headers
         ) as response:
             data = (await response.json())['data']
-            x = json.dumps(data, indent=4)
-            return await ctx.send(f'```json\n{x}\n```')
+            hotspots = data['counts']['hotspots']
+            online = data['counts']['hotspots_online']
+            online_percent = (hotspots - online)/((hotspots + online) / 2) * 100
+
+            embed = Embed(color=random.randint(0, 0xFFFFFF))
+            embed.set_author(
+                name='Helium Stats',
+                icon_url=self.hnt_image
+            )
+            embed.add_field(
+                name='Token Supply',
+                value=data['token_supply'],
+                inline=False
+            )
+            embed.add_field(
+                name='Validators',
+                value=data['counts']['validators'],
+                inline=True
+            )
+            embed.add_field(
+                name='Transactions',
+                value=data['counts']['transactions'],
+                inline=True
+            )
+            embed.add_field(
+                name='OUIs',
+                value=data['counts']['ouis'],
+                inline=True
+            )
+            embed.add_field(
+                name='Hotspots Online',
+                value=online,
+                inline=True
+            )
+            embed.add_field(
+                name='Data Only',
+                value=data['counts']['hotspots_dataonly'],
+                inline=True
+            )
+            embed.add_field(
+                name='Hotspots',
+                value=hotspots,
+                inline=True
+            )
+            embed.add_field(
+                name='Countries',
+                value=data['counts']['countries'],
+                inline=True
+            )
+            embed.add_field(
+                name='Cities',
+                value=data['counts']['cities'],
+                inline=True
+            )
+            embed.add_field(
+                name='Challenges',
+                value=data['counts']['challenges'],
+                inline=True
+            )
+            embed.add_field(
+                name='Blocks',
+                value=data['counts']['blocks'],
+                inline=True
+            )
+            embed.add_field(
+                name='Challenge Counts',
+                value=data['challenge_counts']['last_day'],
+                inline=True
+            )
+            embed.add_field(
+                name='Online Percent',
+                value=f'{round(online_percent, 2)}%',
+                inline=True
+            )
+            return await ctx.send(embed=embed)
 
     ##########
     # helium token supply
@@ -91,10 +161,21 @@ class Helium(commands.Cog, name='Helium'):
         Returns the circulating token supply in either JSON or raw form.
         """
         async with self.client.session.get(
-            'https://api.helium.io/v1/stats/token_supply', headers=self.headers
+            f'{self.api_base}/v1/stats/token_supply', headers=self.headers
         ) as response:
-            data = await response.json()
-            return await ctx.send(data)
+            data = (await response.json())['data']
+
+            embed = Embed(color=random.randint(0, 0xFFFFFF))
+            embed.set_author(
+                name='Helium Stats',
+                icon_url=self.hnt_image
+            )
+            embed.add_field(
+                name='Token Supply',
+                value=data['token_supply'],
+                inline=True
+            )
+            return await ctx.send(embed=embed)
 
     ##########
     # helium blocks
@@ -110,13 +191,13 @@ class Helium(commands.Cog, name='Helium'):
         """
         if max_time is None:
             async with self.client.session.get(
-                'https://api.helium.io/v1/blocks/height', headers=self.headers
+                f'{self.api_base}/v1/blocks/height', headers=self.headers
             ) as response:
                 data = await response.json()
                 return await ctx.send(data)
 
         async with self.client.session.get(
-            f'https://api.helium.io/v1/blocks/height?max_time={max_time}', headers=self.headers
+            f'{self.api_base}/v1/blocks/height?max_time={max_time}', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -130,7 +211,7 @@ class Helium(commands.Cog, name='Helium'):
         GET https://api.helium.io/v1/blocks/stats
         """
         async with self.client.session.get(
-            'https://api.helium.io/v1/blocks/stats', headers=self.headers
+            f'{self.api_base}/v1/blocks/stats', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -146,7 +227,7 @@ class Helium(commands.Cog, name='Helium'):
         response when more results are available.
         """
         async with self.client.session.get(
-            'https://api.helium.io/v1/blocks', headers=self.headers
+            f'{self.api_base}/v1/blocks', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(str(data)[:2000])
@@ -161,7 +242,7 @@ class Helium(commands.Cog, name='Helium'):
         Get block descriptor for block at height
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/blocks/{height}', headers=self.headers
+            f'{self.api_base}/v1/blocks/{height}', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -177,7 +258,7 @@ class Helium(commands.Cog, name='Helium'):
         A cursor field is present if more results are available.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/blocks/{height}/transactions', headers=self.headers
+            f'{self.api_base}/v1/blocks/{height}/transactions', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -192,7 +273,7 @@ class Helium(commands.Cog, name='Helium'):
         Get block descriptor for the given block hash.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/blocks/hash/{hash}', headers=self.headers
+            f'{self.api_base}/v1/blocks/hash/{hash}', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -209,7 +290,7 @@ class Helium(commands.Cog, name='Helium'):
         A cursor field is present if more results are available.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/blocks/hash/{hash}/transactions', headers=self.headers
+            f'{self.api_base}/v1/blocks/hash/{hash}/transactions', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -232,7 +313,7 @@ class Helium(commands.Cog, name='Helium'):
         Returns up to 100 of the accounts sorted by highest token balance.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/accounts/rich?limit={limit}', headers=self.headers
+            f'{self.api_base}/v1/accounts/rich?limit={limit}', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -254,7 +335,7 @@ class Helium(commands.Cog, name='Helium'):
         only the speculative_nonce is supported. It indicates the expected nonce for the account
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/accounts/{address}', headers=self.headers
+            f'{self.api_base}/v1/accounts/{address}', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -278,7 +359,7 @@ class Helium(commands.Cog, name='Helium'):
         based request, you will need to start fetching accounts from the beginning of the list.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/accounts/{address}/hotspots', headers=self.headers
+            f'{self.api_base}/v1/accounts/{address}/hotspots', headers=self.headers
         ) as response:
             data = (await response.json())['data']
             hotspots = [f"[View in explorer]({gw['name']})" for gw in data]
@@ -296,13 +377,13 @@ class Helium(commands.Cog, name='Helium'):
 
             if len(all_fields) <= 25:
                 embed = Embed(
-                    #title=f'{len(hotspots)} Hotspots Found',
+                    # title=f'{len(hotspots)} Hotspots Found',
                     color=random.randint(0, 0xFFFFFF),
                     description=f'```Hotspots found for this address.\n{address}```',
                 )
-                #embed.set_image(
-                #    url=self.hnt_image
-                #)
+                # embed.set_image(
+                #     url=self.hnt_image
+                # )
                 embed.set_author(
                     name=f'{len(hotspots)} Helium Hotspots Found',
                     icon_url=self.hnt_image
@@ -312,9 +393,9 @@ class Helium(commands.Cog, name='Helium'):
                     value=f'[View in explorer](https://explorer.helium.com/hotspots/{gw["address"]}/activity)',
                     inline=False
                 ) for gw in data]
-                #embed.set_thumbnail(
-                #    url=self.hnt_image
-                #)
+                # embed.set_thumbnail(
+                #     url=self.hnt_image
+                # )
                 embed.set_footer(
                     text='Provided By: https://api.helium.io'
                 )
@@ -329,26 +410,6 @@ class Helium(commands.Cog, name='Helium'):
                 paginator.clear()
                 return message
 
-            """
-            embed = Embed(
-                title='Hotspots Found',
-                color=random.randint(0, 0xFFFFFF),
-                description=f'```{len(hotspots)} Hotspots found for this address.\n{address}```',
-            )
-            embed.set_thumbnail(
-                url=self.hnt_image
-            )
-            [embed.add_field(
-                name=' '.join(word.title() for word in gw['name'].split('-')),
-                value=f'[View in explorer](https://explorer.helium.com/accounts/{gw["address"]}/activity)',
-                inline=False
-            ) for gw in data]
-            embed.set_footer(
-                text='Provided By: https://api.helium.io'
-            )
-            return await ctx.send(embed=embed)
-            """
-
     ##########
     # helium validators for account
     @helium.command(name='validatorsaccount', aliases=['vfa'])
@@ -360,7 +421,7 @@ class Helium(commands.Cog, name='Helium'):
         paged. If a cursor field is present more results are available.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/accounts/{address}/validators', headers=self.headers
+            f'{self.api_base}/v1/accounts/{address}/validators', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -376,7 +437,7 @@ class Helium(commands.Cog, name='Helium'):
         If a cursor field is present more results are available.
         """
         async with self.client.session.get(
-            f'https://api.helium.io/v1/accounts/{address}/ouis', headers=self.headers
+            f'{self.api_base}/v1/accounts/{address}/ouis', headers=self.headers
         ) as response:
             data = await response.json()
             return await ctx.send(data)
@@ -396,7 +457,7 @@ class Helium(commands.Cog, name='Helium'):
         gw_name = '-'.join((word.lower() for word in words[:3]))
 
         async with self.client.session.get(
-            f'https://api.helium.io/v1/hotspots/name/{gw_name}', headers=self.headers
+            f'{self.api_base}/v1/hotspots/name/{gw_name}', headers=self.headers
         ) as response:
             resp = (await response.json())['data'][0]
             # print(json.dumps(resp, indent=2))
@@ -417,7 +478,7 @@ class Helium(commands.Cog, name='Helium'):
             #     icon_url=self.hnt_image
             # )
             embed.add_field(
-                name=f'Location [lat, Lon]',
+                name='Location [lat, Lon]',
                 value=f'{round(resp["lat"], 4)}, {round(resp["lng"], 4)}',
                 inline=False
             )
@@ -475,6 +536,7 @@ class Helium(commands.Cog, name='Helium'):
     # ----------------------------------------------
     # Cog Tasks
     # ----------------------------------------------
+
 
 async def setup(client):
     """This is called when the cog is loaded via load_extension"""
