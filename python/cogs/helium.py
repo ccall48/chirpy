@@ -18,6 +18,7 @@ It collects informmation about helium miners...
 """
 
 import json
+import re
 import random
 from discord.ext import commands
 from discord import Embed
@@ -193,14 +194,36 @@ class Helium(commands.Cog, name='Helium'):
             async with self.client.session.get(
                 f'{self.api_base}/v1/blocks/height', headers=self.headers
             ) as response:
-                data = await response.json()
-                return await ctx.send(data)
+                data = (await response.json())['data']
+
+                embed = Embed(color=random.randint(0, 0xFFFFFF))
+                embed.set_author(
+                    name='Blockheight',
+                    icon_url=self.hnt_image
+                )
+                embed.add_field(
+                    name='Current Block Height',
+                    value=data['height'],
+                    inline=True
+                )
+            return await ctx.send(embed=embed)
 
         async with self.client.session.get(
             f'{self.api_base}/v1/blocks/height?max_time={max_time}', headers=self.headers
         ) as response:
             data = await response.json()
-            return await ctx.send(data)
+
+            embed = Embed(color=random.randint(0, 0xFFFFFF))
+            embed.set_author(
+                name='Blockheight',
+                icon_url=self.hnt_image
+            )
+            embed.add_field(
+                name=f'Block Height @ {re.sub(r"(T|Z)", " ", data["meta"]["max_time"])}',
+                value=data['data']['height'],
+                inline=False
+            )
+            return await ctx.send(embed=embed)
 
     ##########
     # helium block stats
