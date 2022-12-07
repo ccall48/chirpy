@@ -512,59 +512,70 @@ class Helium(commands.Cog, name='Helium'):
         async with self.client.session.get(
             f'{self.api_base}/v1/hotspots/name/{gw_name}', headers=self.headers
         ) as response:
-            resp = (await response.json())['data'][0]
-            # print(json.dumps(resp, indent=2))
+            resp = (await response.json())['data']
+
+            if len(resp) == 0:
+                embed = Embed(
+                    description=f'Hotspot with name ```{" ".join((word.title() for word in words[:3]))}``` not found.',
+                    color=random.randint(0, 0xFFFFFF)
+                )
+                embed.set_author(
+                    name='Helium Hotspot Not Found!',
+                    icon_url=self.hnt_image
+                )
+                return await ctx.send(embed=embed)
 
             embed = Embed(
                 title=f'{" ".join((word.title() for word in words[:3]))}',
-                url=f'https://explorer.helium.com/hotspots/{resp["address"]}',
+                url=f'https://explorer.helium.com/hotspots/{resp[0]["address"]}',
             )
-            embed.set_thumbnail(
-                url=self.hnt_image
-            )
+            embed.set_author(
+                    name='Helium Hotspot Found!',
+                    icon_url=self.hnt_image
+                )
             embed.add_field(
                 name='Location [lat, Lon]',
-                value=f'{round(resp["lat"], 4)}, {round(resp["lng"], 4)}',
+                value=f'{round(resp[0]["lat"], 4)}, {round(resp[0]["lng"], 4)}',
                 inline=False
             )
             embed.add_field(
                 name='Date Added',
-                value=resp['timestamp_added'][:10],
+                value=resp[0]['timestamp_added'][:10],
                 inline=True
             )
             embed.add_field(
                 name='Status',
-                value=resp['status']['online'].title(),
+                value=resp[0]['status']['online'].title(),
                 inline=True
             )
             embed.add_field(
                 name='Hotspot Name',
-                value=resp['mode'].title(),
+                value=resp[0]['mode'].title(),
                 inline=True
             )
             embed.add_field(
                 name='Location Hex',
-                value=resp['location_hex'],
+                value=resp[0]['location_hex'],
                 inline=True
             )
             embed.add_field(
                 name='Location',
-                value=resp['location'],
+                value=resp[0]['location'],
                 inline=True
             )
             embed.add_field(
                 name='Mode',
-                value=resp['mode'],
+                value=resp[0]['mode'],
                 inline=True
             )
             embed.add_field(
                 name='Block Added',
-                value=resp['block_added'],
+                value=resp[0]['block_added'],
                 inline=True
             )
             embed.add_field(
                 name='Miner Address',
-                value=resp['address'],
+                value=resp[0]['address'],
                 inline=False
             )
             embed.set_footer(

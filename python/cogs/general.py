@@ -18,7 +18,7 @@ class General(commands.Cog, name='General'):
         "Commands to get a blank or random funny meme"
         await ctx.send_help('meme')
 
-    @meme.command(name='blank', aliases=['canvas', 'create'])
+    @meme.command(name='blank', aliases=['b', 'canvas', 'create'])
     async def imgflip(self, ctx):
         async with self.client.session.get('https://api.imgflip.com/get_memes') as response:
             memes = (await response.json())['data']['memes']

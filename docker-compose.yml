@@ -1,7 +1,7 @@
 version: "3"
 services:
   python:
-    container_name: nunya_python
+    container_name: chirpy_python
     build: .
     volumes:
       - './:/opt/src/'

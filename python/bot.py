@@ -8,7 +8,7 @@ from discord import DMChannel, Intents, AllowedMentions, Status
 from aiohttp import ClientSession, ClientTimeout
 
 
-class Nunya(AutoShardedBot):
+class Chirpy(AutoShardedBot):
     def __init__(self, *args, **options):
         super().__init__(*args, **options)
         self.main_guild = None
@@ -72,9 +72,9 @@ class Nunya(AutoShardedBot):
         await self.change_presence(status=self.status, activity=activity)
 
 
-client = Nunya(
-    command_prefix=when_mentioned_or('nunya ', 'Nunya '),
-    description='Hi I am Nunya!',
+client = Chirpy(
+    command_prefix=when_mentioned_or('chirpy ', 'Chirpy '),
+    description='Heya I am Chirpy!',
     max_messages=15000,
     intents=Intents.all(),
     allowed_mentions=AllowedMentions(everyone=False, users=True, roles=True)
@@ -88,7 +88,7 @@ async def on_ready():
     print('\nActive in these guilds/servers:')
     [print(g.name) for g in client.guilds]
     print('\nMain guild:', client.main_guild.name)
-    print('\nNunya-Python started successfully')
+    print('\nChirpy-Python started successfully')
     return True
 
 
@@ -117,4 +117,4 @@ async def on_message(msg):
 
 
 client.run(client.config['bot_key'])
-print('Nunya-Python has exited')
+print('Chirpy-Python has exited')
