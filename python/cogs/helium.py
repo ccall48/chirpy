@@ -416,8 +416,7 @@ class Helium(commands.Cog, name='Helium'):
         ) as response:
             data = (await response.json())['data']
             hotspots = [f"[View in explorer]({gw['name']})" for gw in data]
-            # all_hotspots = "\n".join(hotspots)
-            # return await ctx.send(f'```{len(fields)} | {all_hotspots}```')
+
             paginator = commands.Paginator(
                 prefix='```',
                 suffix='```',
@@ -430,13 +429,9 @@ class Helium(commands.Cog, name='Helium'):
 
             if len(all_fields) <= 25:
                 embed = Embed(
-                    # title=f'{len(hotspots)} Hotspots Found',
                     color=random.randint(0, 0xFFFFFF),
                     description=f'```Hotspots found for this address.\n{address}```',
                 )
-                # embed.set_image(
-                #     url=self.hnt_image
-                # )
                 embed.set_author(
                     name=f'{len(hotspots)} Helium Hotspots Found',
                     icon_url=self.hnt_image
@@ -446,9 +441,6 @@ class Helium(commands.Cog, name='Helium'):
                     value=f'[View in explorer](https://explorer.helium.com/hotspots/{gw["address"]}/activity)',
                     inline=False
                 ) for gw in data]
-                # embed.set_thumbnail(
-                #     url=self.hnt_image
-                # )
                 embed.set_footer(
                     text='Provided By: https://api.helium.io'
                 )
