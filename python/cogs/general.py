@@ -6,6 +6,29 @@ from discord import Embed
 class General(commands.Cog, name='General'):
     def __init__(self, client):
         self.client = client
+        self.hnt_image = 'https://cdn.discordapp.com/attachments/788621973709127693/999838638827380806/hnt.png'
+
+    @commands.command('invite', aliases=['add', 'addme', 'me'])
+    async def invite(self, ctx):
+        embed = Embed(
+            description='Click link below to give Chirpy Bot authorization to join your server!',
+            color=random.randint(0, 0xFFFFFF)
+        )
+        embed.set_author(
+            name='Chirpy Bot Invite Link',
+            icon_url=self.hnt_image
+        )
+        embed.add_field(
+            name='Add Chirpy Bot to your server!',
+            value=f'[Chirpy Invite Link]({self.client.config["bot_join_url"]})',
+            inline=False
+        )
+        embed.add_field(
+            name='Contribute to Chirpy Bot on Github!',
+            value=f'[Chirpy Github Link](https://github.com/ccall48/chirpy)',
+            inline=False
+        )
+        return await ctx.send(embed=embed)
 
     @commands.group(
         pass_context=True,
