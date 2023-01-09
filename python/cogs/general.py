@@ -1,4 +1,5 @@
 import random
+from geopy.distance import geodesic
 from discord.ext import commands
 from discord import Embed
 
@@ -69,6 +70,23 @@ class General(commands.Cog, name='General'):
                 url=meme['url']
             )
         return await ctx.send(embed=embed)
+
+    @commands.command(
+        name='distance',
+        aliases=['km']
+    )
+    async def distance(self, ctx, lat1, lon1, lat2, lon2):
+        """Distance between 2 gps coords"""
+        kms = round(geodesic((lat1, lon1), (lat2, lon2)).km, 2)
+        mis = round(geodesic((lat1, lon1), (lat2, lon2)).mi, 2)
+        embed = Embed(
+            title='Distance Between Coords',
+            color=random.randint(0, 0xFFFFFF),
+            description=f'{lat1}, {lon1}\n{lat2}, {lon2}\n{kms} Km\'s\n{mis} Mi\'s'
+        )
+        # return await ctx.send(dis)
+        return await ctx.send(embed=embed)
+
 
     # ----------------------------------------------
     # Cog Tasks
