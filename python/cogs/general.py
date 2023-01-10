@@ -26,7 +26,7 @@ class General(commands.Cog, name='General'):
         )
         embed.add_field(
             name='Contribute to Chirpy Bot on Github!',
-            value=f'[Chirpy Github Link](https://github.com/ccall48/chirpy)',
+            value='[Chirpy Github Link](https://github.com/ccall48/chirpy)',
             inline=False
         )
         return await ctx.send(embed=embed)
@@ -84,13 +84,12 @@ class General(commands.Cog, name='General'):
             color=random.randint(0, 0xFFFFFF),
             description=f'{lat1}, {lon1}\n{lat2}, {lon2}\n{kms} Km\'s\n{mis} Mi\'s'
         )
-        # return await ctx.send(dis)
         return await ctx.send(embed=embed)
-
 
     # ----------------------------------------------
     # Cog Tasks
     # ----------------------------------------------
+
 
 async def setup(client):
     """This is called when the cog is loaded via load_extension"""

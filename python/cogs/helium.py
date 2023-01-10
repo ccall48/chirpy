@@ -14,12 +14,14 @@ It collects informmation about helium miners...
     ├ hotspotsaccount       Fetches hotspots owned by a given account address
     ├ validatorsaccount     Fetches validators owned by a given account address
     ├ ouisaccount           Fetches OUIs owned by a given account address
+    ├ minerdistance         Fetches distance between 2 helium hotspots by animal name.
     └ minername             Helium hotspot data for name
 """
 
-import json
+# import json
 import re
 import random
+from geopy.distance import geodesic
 from discord.ext import commands
 from discord import Embed
 
@@ -575,6 +577,68 @@ class Helium(commands.Cog, name='Helium'):
             )
 
             return await ctx.send(embed=embed)
+
+    @helium.command(name='minerdistance', aliases=['minerdis', 'md'])
+    async def miner_distance(self, ctx, hotspot_1, hotspot_2):
+        """
+        Helium get 2 x hotspots by name and return the distance between them in Kilometers
+        and miles.
+        GET https://api.helium.io/v1/hotspots/name/:name
+        """
+        async with self.client.session.get(
+            f'{self.api_base}/v1/hotspots/name/{hotspot_1}', headers=self.headers
+        ) as resp1:
+            hs1 = (await resp1.json())['data']
+
+            if len(hs1) == 0:
+                embed = Embed(
+                    description=f'Hotspot with name ```{hotspot_1}``` not found.',
+                    color=random.randint(0, 0xFFFFFF)
+                )
+                embed.set_author(
+                    name='Helium Hotspot Not Found!',
+                    icon_url=self.hnt_image
+                )
+                return await ctx.send(embed=embed)
+
+        async with self.client.session.get(
+            f'{self.api_base}/v1/hotspots/name/{hotspot_2}', headers=self.headers
+        ) as resp2:
+            hs2 = (await resp2.json())['data']
+
+            if len(hs2) == 0:
+                embed = Embed(
+                    description=f'Hotspot with name ```{hotspot_2}``` not found.',
+                    color=random.randint(0, 0xFFFFFF)
+                )
+                embed.set_author(
+                    name='Helium Hotspot Not Found!',
+                    icon_url=self.hnt_image
+                )
+                return await ctx.send(embed=embed)
+
+        kms = round(geodesic((hs1[0]["lat"], hs1[0]["lng"]), (hs2[0]["lat"], hs2[0]["lng"])).km, 2)
+        mis = round(geodesic((hs1[0]["lat"], hs1[0]["lng"]), (hs2[0]["lat"], hs2[0]["lng"])).mi, 2)
+
+        embed = Embed(
+            color=random.randint(0, 0xFFFFFF),
+            description=f'{hotspot_1}\nto...\n{hotspot_2}'
+        )
+        embed.set_author(
+            name='Hotspot Distances Generated',
+            icon_url=self.hnt_image
+        )
+        embed.add_field(
+            name='Kilometers',
+            value=kms,
+            inline=True
+        )
+        embed.add_field(
+            name='Miles',
+            value=mis,
+            inline=True
+        )
+        return await ctx.send(embed=embed)
 
     # ----------------------------------------------
     # Cog Tasks
