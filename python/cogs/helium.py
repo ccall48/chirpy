@@ -18,7 +18,6 @@ It collects informmation about helium miners...
     └ minername             Helium hotspot data for name
 """
 
-# import json
 import re
 import random
 from geopy.distance import geodesic
@@ -630,12 +629,12 @@ class Helium(commands.Cog, name='Helium'):
         )
         embed.add_field(
             name='Kilometers',
-            value=kms,
+            value=f'{kms:,} km',
             inline=True
         )
         embed.add_field(
             name='Miles',
-            value=mis,
+            value=f'{mis:,} mi',
             inline=True
         )
         return await ctx.send(embed=embed)
