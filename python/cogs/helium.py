@@ -16,6 +16,8 @@ It collects informmation about helium miners...
     ├ ouisaccount           Fetches OUIs owned by a given account address
     ├ minerdistance         Fetches distance between 2 helium hotspots by animal name.
     └ minername             Helium hotspot data for name
+    --
+    tosolana                Helium wallet converted to solana
 """
 
 import re
@@ -638,6 +640,42 @@ class Helium(commands.Cog, name='Helium'):
             inline=True
         )
         return await ctx.send(embed=embed)
+
+
+    @helium.command(name='tosolana', aliases=['solanaaddress', 'sa'])
+    async def wallet_to_solana(self, ctx, wallet_address):
+        """
+        Helium tool to convert old public wallet address to solana
+        GET https://migration.web.helium.io/helium/:helium_address
+        """
+        async with self.client.session.get(
+            f'https://migration.web.helium.io/helium/{wallet_address}', headers=self.headers
+        ) as resp:
+            sw = (await resp.json())#['solanaAddress']
+
+            if resp.status != 200:
+                embed = Embed(
+                    description=f'Helium Wallet ```{wallet_address}``` not found.',
+                    color=random.randint(0, 0xFFFFFF)
+                )
+                embed.set_author(
+                    name='Helium Wallet Not Found!',
+                    icon_url=self.hnt_image
+                )
+                return await ctx.send(embed=embed)
+
+            embed = Embed(
+                description=f'''
+                    Helium Wallet ```{wallet_address}```\n
+                    Solana Wallet ```{sw["solanaAddress"]}```
+                    ''',
+                color=random.randint(0, 0xFFFFFF)
+            )
+            embed.set_author(
+                name='Helium Wallet Found!',
+                icon_url=self.hnt_image
+            )
+            return await ctx.send(embed=embed)
 
     # ----------------------------------------------
     # Cog Tasks
